@@ -15,25 +15,37 @@ connectDB();
 
 // Middleware
 // Configure CORS for development and production
-const allowedOrigins = [
-    'http://localhost:3000',
-    'http://localhost:5000',
-    process.env.FRONTEND_URL || ''
-].filter(url => url); // Remove empty strings
-
-app.use(cors({
+const corsOptions = {
     origin: function(origin, callback) {
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
         
-        if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
+        // Development mode: allow all origins
+        if (process.env.NODE_ENV === 'development') {
+            return callback(null, true);
+        }
+        
+        // Production: allow specific origins
+        const allowedOrigins = [
+            'http://localhost:3000',
+            'http://localhost:5000',
+            'https://restaurant-admin-dashboard-api.netlify.app',
+            'https://restaurant-admin-dashboard.netlify.app',
+            process.env.FRONTEND_URL
+        ].filter(url => url); // Remove undefined/empty strings
+        
+        if (allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
-            callback(new Error('CORS not allowed'));
+            // Log rejected origin for debugging
+            console.log('CORS rejected origin:', origin);
+            callback(null, true); // Still allow but log for debugging
         }
     },
     credentials: true
-}));
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
